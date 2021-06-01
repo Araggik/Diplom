@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using TriadNSim.Modifications.Forms;
 
 namespace TriadNSim.Modifications.FormsElements
 {
@@ -14,6 +15,12 @@ namespace TriadNSim.Modifications.FormsElements
         public void TestEvent(object sender, EventArgs e)
         {
            
+        }
+
+        public void CallFormForRules(object sender, EventArgs e)
+        {
+            RulesChanger newForm = new RulesChanger();
+            var res = newForm.ShowDialog();
         }
 
         public Idef_ItemMenu()
@@ -28,6 +35,7 @@ namespace TriadNSim.Modifications.FormsElements
 
             ToolStripItem item2 = new ToolStripMenuItem();
             item2.Text = "Create rules";
+            item2.Click += CallFormForRules;
 
             this.DropDownItems.Add(item2);            
         }

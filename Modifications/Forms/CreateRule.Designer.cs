@@ -118,7 +118,7 @@ namespace TriadNSim.Modifications.Forms
             this.listView1.HideSelection = false;
             this.listView1.Location = new System.Drawing.Point(302, 397);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(729, 126);
+            this.listView1.Size = new System.Drawing.Size(729, 143);
             this.listView1.TabIndex = 6;
             this.listView1.UseCompatibleStateImageBehavior = false;
             // 
@@ -126,7 +126,7 @@ namespace TriadNSim.Modifications.Forms
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1052, 535);
+            this.ClientSize = new System.Drawing.Size(1052, 552);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label1);

@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Xml;
 using System.IO;
 using TriadNSim.Ontology;
+using TriadNSim;
 
 namespace TriadNSim.Modifications.Forms
 {
@@ -109,12 +110,62 @@ namespace TriadNSim.Modifications.Forms
             return res;
         }
 
+        private void lv_DragOver(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(typeof(ListViewItem)))
+            {
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+        }
+
+        private void lv_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            listView1.DoDragDrop(e.Item, DragDropEffects.Move);
+        }
+
+
+        private void dp_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(ListViewItem)))
+                e.Effect = DragDropEffects.Move;
+        }
+
+        private void dp_DragDrop(object sender, DragEventArgs e)
+        {
+            DrawingPanel.DrawingPanel dp = (DrawingPanel.DrawingPanel)sender;
+            ListViewItem li = (ListViewItem)e.Data.GetData(typeof(ListViewItem));
+            Point pt = dp.PointToClient(new Point(e.X, e.Y));
+
+            float fZoom = dp.Zoom;
+            int delta = 100;
+            int X = (int)((pt.X / fZoom - dp.dx) - delta / 2);
+            int Y = (int)((pt.Y / fZoom - dp.dx) - delta / 2);
+            NetworkObject shape = new NetworkObject(dp);
+            shape.Rect = new Rectangle(X, Y, delta, delta);
+            shape.Name = li.Text;
+            shape.img = new Bitmap(ItemImages[li]);
+            shape.showBorder = false;
+            dp.ShapeCollection.AddShape(shape);
+
+            dp.Focus();
+        }
+
+        private void Add_functions()
+        {
+            listView1.DragOver += new DragEventHandler(lv_DragOver);
+            listView1.ItemDrag += new ItemDragEventHandler(lv_ItemDrag);
+            drawingPanel1.DragDrop+= new DragEventHandler(dp_DragDrop);
+            drawingPanel1.DragEnter+= new DragEventHandler(dp_DragEnter);
+        }
+
         public CreateRule()
         {
             InitializeComponent();
             ontologyManager = new COWLOntologyManager(sOntologyPath);
             ItemImages = new Dictionary<ListViewItem, Bitmap>();
             LoadElements();
+            Add_functions();
         }
     }
 }

@@ -7,14 +7,25 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using TriadNSim.Modifications.Forms;
+using System.Collections;
+using DrawingPanel;
 
 namespace TriadNSim.Modifications.FormsElements
 {
     public partial class Idef_ItemMenu : ToolStripMenuItem//UserControl
     {
+        public DrawingPanel.DrawingPanel main_drawning_panel=null;
+
         public void TestEvent(object sender, EventArgs e)
         {
            
+        }
+
+        public void CallFormForTranslation(object sender, EventArgs e)
+        {
+            Translation newForm = new Translation();
+            newForm.main_panel = main_drawning_panel;
+            var res = newForm.ShowDialog();
         }
 
         public void CallFormForRules(object sender, EventArgs e)
@@ -30,6 +41,7 @@ namespace TriadNSim.Modifications.FormsElements
 
             ToolStripItem item1 = new ToolStripMenuItem();
             item1.Text = "Translate IDEF";
+            item1.Click += CallFormForTranslation;
 
             this.DropDownItems.Add(item1);
 

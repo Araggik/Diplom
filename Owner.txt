@@ -1,0 +1,89 @@
+routine Owner(InOut Con[10])
+ initial
+   Print "I'm owner";
+   integer t,i,key,maxkey,minkey;
+   integer maxerr,minerr,limit,err,counterr;
+   integer min_reward,max_reward, min_amount,max_amount;
+   integer min_time, max_time, time;
+   real wallet,reward,amount;
+   array[100] of string Names,ArrayMessage; 
+   integer count_names,id_name;
+   string s,name,tran;
+   boolean flag;  
+   schedule InitialEvent in 0;
+ endi
+ event;
+   Print message;
+   ArrayMessage:=Split(message,' ');
+   if ArrayMessage[0] = "Wallet" then
+	   if ArrayMessage[1] != "0" then
+	      name:=ArrayMessage[1];
+		  wallet:=StrToReal(ArrayMessage[2]);
+		  i:=0;
+		  flag:=true;
+		  while ((i<count_names) & flag) do
+		    if(Names[i] = name) then
+			  flag:=false;
+			  id_name:=i;
+			endif;  
+		    i:=i+1;
+		  endw;
+	   else 
+	     name:="";
+		 wallet:=0;		 
+	   endif;
+   endif;
+ ende
+ event InitialEvent;
+   Print "InitialEvent";
+   t:=1;
+   count_names:=4;
+   Names[0]:="Tom";
+   Names[1]:="Nick";
+   Names[2]:="Den";
+   Names[3]:="Eve";
+   minkey:=1000000;
+   maxkey:=9999999;
+   (*key:=RandomIn(minkey,maxkey);*)
+   key:=1239876;
+   wallet:=0;
+   minerr:=0;
+   maxerr:=1000;
+   limit:=5;
+   max_reward:=5;
+   min_reward:=1;
+   min_amount:=5;
+   max_amount:=10;
+   min_time:=1;
+   max_time:=3;
+   id_name:=-1;
+   schedule SendKey in t;  
+ ende
+ event SendKey;
+   s:="";
+   s:="Key"+" "+IntToStr(key);
+   out s through Con[0];
+   schedule SendTransaction in t;
+ ende
+ event SendTransaction;
+   err:=RandomIn(minerr,maxerr);
+   if err <5 then     
+   else
+    i:=id_name;
+    while(i=id_name) do
+	  i:=RandomIn(0,count_names-1);
+    endw;
+	tran:="Tran";
+    tran:=tran+" "+Names[i];	
+	i:=RandomIn(min_amount,max_amount);
+	amount:=wallet/100*i;
+	tran:=tran+" "+RealToStr(amount);
+	i:=RandomIn(min_reward,max_reward);
+	reward:=amount/100*i;
+    tran:=tran+" "+RealToStr(reward);
+	out tran through Con[0];
+   endif;
+   time:=RandomIn(min_time,max_time);
+   schedule SendTransaction in time;
+ ende
+endrout 

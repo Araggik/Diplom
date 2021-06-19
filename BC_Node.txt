@@ -1,0 +1,65 @@
+routine BC_Node(InOut Con[10])
+ initial
+   Print "I'm node";   
+   array[100] of integer IdWallets,KeyWallets;
+   array[100] of real AmountWallets;
+   array[100] of string NameWallets,ArrayMessage;
+   integer count_wallets;
+   integer t,mode,i,j;
+   boolean flag;
+   string s;
+   schedule InitialEvent in 0;
+ endi
+ event;
+   Print message;
+   ArrayMessage:=Split(message,' ');
+   if ArrayMessage[0] = "Key" then
+     i:=0;
+	 flag:=true;
+	 while((i<count_wallets) & flag) do	   
+	   if ArrayMessage[1] = IntToStr(KeyWallets[i]) then
+	     flag:=false;
+		 mode:=2;
+		 s:="";
+		 s:="Wallet"+" "+NameWallets[i]+" "+RealToStr(AmountWallets[i]);
+		 out s through Con[0];
+		 s:="";
+		 s:="Names"+" "+IntToStr(count_wallets);
+		 j:=0;
+		 while (j<count_wallets) do
+		   s:=s+" "+NameWallets[j];
+		   j:=j+1;
+		 endw;
+		 out s through Con[0];
+	   endif;	   
+	   i:=i+1;
+	 endw;
+     if(flag) then
+	  s:="";
+	  s:="Wallet"+" "+"0";
+	  out s through Con[0];
+     endif;	 
+   endif;
+ ende 
+ event InitialEvent;
+   Print "InitialEvent";
+   mode:=1;
+   count_wallets:=4;
+   IdWallets[0]:=0;
+   KeyWallets[0]:=1239876;
+   AmountWallets[0]:=10000;
+   NameWallets[0]:="Tom";
+   IdWallets[1]:=1;
+   KeyWallets[1]:=9876123;
+   AmountWallets[1]:=50000;
+   NameWallets[1]:="Nick";
+   IdWallets[2]:=2;
+   KeyWallets[2]:=1234987;
+   AmountWallets[2]:=15000;
+   NameWallets[2]:="Den";
+   IdWallets[3]:=3;
+   KeyWallets[3]:=3459876;
+   AmountWallets[3]:=10000;
+   NameWallets[3]:="Eve";
+ ende
+endrout 

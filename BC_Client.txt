@@ -1,0 +1,36 @@
+routine BC_Client(InOut Con[10])
+ initial
+  Print "I'm client";
+  array[100] of string ArrayMessage,Names;
+  real current_amount;
+  string current_name;
+  integer count_names,i;
+ endi
+ event;
+  Print message;
+  ArrayMessage:=Split(message,' ');
+  if ArrayMessage[0] = "Key" then
+     out message through Con[1];
+  else
+    if ArrayMessage[0] = "Wallet" then
+	   if ArrayMessage[1] != "0" then
+	      current_name:=ArrayMessage[1];
+		  current_amount:=StrToReal(ArrayMessage[2]);
+	   else 
+	     current_name:="";
+		 current_amount:=0;		 
+	   endif;
+	   out message through Con[0];
+	else 
+	  if ArrayMessage[0] = "Names" then
+	    count_names:=StrToInt(ArrayMessage[1]);
+		i:=0;
+		while(i<count_names) do 
+		  Names[i]:=ArrayMessage[2+i];
+		  i:=i+1;
+		endw;
+      endif;	  
+	endif;
+  endif;
+ ende 
+endrout 

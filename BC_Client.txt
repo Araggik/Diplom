@@ -2,9 +2,10 @@ routine BC_Client(InOut Con[10])
  initial
   Print "I'm client";
   array[100] of string ArrayMessage,Names;
-  real current_amount;
-  string current_name;
+  real current_amount,tran_sum;
+  string current_name,tran;
   integer count_names,i;
+  boolean flag;
  endi
  event;
   Print message;
@@ -29,7 +30,32 @@ routine BC_Client(InOut Con[10])
 		  Names[i]:=ArrayMessage[2+i];
 		  i:=i+1;
 		endw;
+	  else
+	    if ArrayMessage[0] = "Tran" then
+		  schedule ValidTran in 0;
+		endif;
       endif;	  
+	endif;
+  endif;
+ ende
+ event ValidTran;
+  tran_sum:=StrToReal(ArrayMessage[2])+StrToReal(ArrayMessage[3]);
+  if (tran_sum<=current_amount) then
+    i:=0;
+	flag:=true;
+	while((i<count_names) & flag)do
+	  if(ArrayMessage[1] = Names[i]) then
+	    flag:=false;
+	  endif;
+	  i:=i+1;
+	endw;
+	if(!flag) then
+	  tran:="Tran";
+	  tran:=tran+" "+current_name;
+	  for i:=0 to 2 do
+	    tran:=tran+" "+ArrayMessage[1+i];
+	  endf;	
+      out tran through Con[1];  	  
 	endif;
   endif;
  ende 

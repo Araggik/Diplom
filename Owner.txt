@@ -2,7 +2,7 @@ routine Owner(InOut Con[10])
  initial
    Print "I'm owner";
    integer t,i,key,maxkey,minkey;
-   integer maxerr,minerr,limit,err,counterr;
+   integer maxerr,minerr,limit,err,counterr,kinderr;
    integer min_reward,max_reward, min_amount,max_amount;
    integer min_time, max_time, time;
    real wallet,reward,amount;
@@ -57,6 +57,7 @@ routine Owner(InOut Con[10])
    min_time:=1;
    max_time:=3;
    id_name:=-1;
+   counterr:=2;
    schedule SendKey in t;  
  ende
  event SendKey;
@@ -67,7 +68,37 @@ routine Owner(InOut Con[10])
  ende
  event SendTransaction;
    err:=RandomIn(minerr,maxerr);
-   if err <5 then     
+   if err <limit then   
+    kinderr:=RandomIn(1,counterr);
+	if kinderr = 1 then
+	  i:=id_name;
+      while(i=id_name) do
+	   i:=RandomIn(0,count_names-1);
+      endw;
+	  tran:="Tran";
+      tran:=tran+" "+Names[i]+IntToStr(RandomIn(1,9));	
+	  i:=RandomIn(min_amount,max_amount);
+	  amount:=wallet/100*i;
+	  tran:=tran+" "+RealToStr(amount);
+	  i:=RandomIn(min_reward,max_reward);
+	  reward:=amount/100*i;
+      tran:=tran+" "+RealToStr(reward);
+	else
+	  if kinderr = 2 then
+	    i:=id_name;
+        while(i=id_name) do
+	     i:=RandomIn(0,count_names-1);
+        endw;
+	    tran:="Tran";
+        tran:=tran+" "+Names[i]+IntToStr(RandomIn(1,9));	
+	    i:=RandomIn(min_amount,max_amount);
+	    amount:=wallet/100*i+wallet;
+	    tran:=tran+" "+RealToStr(amount);
+	    i:=RandomIn(min_reward,max_reward);
+	    reward:=amount/100*i;
+        tran:=tran+" "+RealToStr(reward); 
+	  endif;
+	endif;
    else
     i:=id_name;
     while(i=id_name) do
@@ -80,9 +111,9 @@ routine Owner(InOut Con[10])
 	tran:=tran+" "+RealToStr(amount);
 	i:=RandomIn(min_reward,max_reward);
 	reward:=amount/100*i;
-    tran:=tran+" "+RealToStr(reward);
-	out tran through Con[0];
+    tran:=tran+" "+RealToStr(reward);	
    endif;
+   out tran through Con[0];
    time:=RandomIn(min_time,max_time);
    schedule SendTransaction in time;
  ende

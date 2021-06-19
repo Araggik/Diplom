@@ -4,14 +4,15 @@ routine BC_Node(InOut Con[10])
    array[100] of integer IdWallets,KeyWallets;
    array[100] of real AmountWallets,Powers;
    array[100] of string NameWallets,ArrayMessage;
-   array[100] of string Register;
+   array[100] of string Register,Transactions;
    integer count_wallets,count_nodes,count_tran_block;
    integer t,mode,i,j,start_send,net_reward,p,count_p;
    integer for_hash,nonce,zero_count,time_stamp,num;
-   integer count_blocks;
-   real own_wallet,number,hash,prev_hash;
-   boolean flag;
-   string s,block;
+   integer count_blocks, current_wallet, to_id;
+   integer cur_count_tran, minrand,maxrand;
+   real own_wallet,number,hash,prev_hash,amount,reward;
+   boolean flag, flag2;
+   string s,block,tran;
    schedule InitialEvent in 0;
  endi
  event;
@@ -22,6 +23,7 @@ routine BC_Node(InOut Con[10])
 	 flag:=true;
 	 while((i<count_wallets) & flag) do	   
 	   if ArrayMessage[1] = IntToStr(KeyWallets[i]) then
+	     current_wallet:=i;
 	     flag:=false;
 		 mode:=2;
 		 s:="";
@@ -45,6 +47,7 @@ routine BC_Node(InOut Con[10])
      endif;	 
    else
      if ArrayMessage[0] = "Tran" then
+	   schedule ValidTran in 0;
 	 else
 	   if ArrayMessage[0] = "Tran_node" then
 	   else 
@@ -58,6 +61,8 @@ routine BC_Node(InOut Con[10])
    Print "InitialEvent";
    start_send:=2;
    mode:=1;
+   own_wallet:=0;
+   cur_count_tran:=0;
    count_blocks:=0;
    count_wallets:=4;
    count_nodes:=3;
@@ -68,6 +73,8 @@ routine BC_Node(InOut Con[10])
    p:=31;
    count_p:=30;
    zero_count:=1;
+   minrand:=100;
+   maxrand:=999;
    hash:=0;
    IdWallets[0]:=0;
    KeyWallets[0]:=1239876;
@@ -122,6 +129,39 @@ routine BC_Node(InOut Con[10])
    Print block;
    Register[count_blocks]:=block;
    count_blocks:=count_blocks+1;
+ ende
+ event ValidTran;
+   i:=0;
+   flag:=true;
+   flag2:=true;
+   while ((i<count_wallets) & (flag | flag2)) do 
+     if (flag & (ArrayMessage[1] = NameWallets[i]) &(i = current_wallet)) then
+	    flag:=false;
+	 endif;
+	 if (flag2 & (ArrayMessage[2] = NameWallets[i])) then
+	    flag2:=false;
+		to_id:=i;
+	 endif;
+     i:=i+1;
+   endw;
+   (*amount*)
+   amount:=StrToReal(ArrayMessage[3]);
+   reward:=StrToReal(ArrayMessage[4]);
+   if( AmountWallets[current_wallet] >= (amount+reward)) then
+      tran:=IntToStr(count_blocks)+IntToStr(RandomIn(minrand,maxrand));
+      tran:=tran+" "+IntToStr(current_wallet);
+	  tran:=tran+" "+IntToStr(to_id);
+	  tran:=tran+" "+ArrayMessage[3];
+	  tran:=tran+" "+ArrayMessage[4];
+	  Transactions[cur_count_tran]:=tran;
+	  cur_count_tran:=cur_count_tran+1;
+	  tran:="Tran_node"+" "+tran;
+	  i:=1;
+	  while (i<count_nodes) do
+	    out tran through Con[i];
+	    i:=i+1;
+	  endw;
+   endif;
  ende
  event SendTransaction;
    if mode = 1 then

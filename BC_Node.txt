@@ -2,12 +2,16 @@ routine BC_Node(InOut Con[10])
  initial
    Print "I'm node";   
    array[100] of integer IdWallets,KeyWallets;
-   array[100] of real AmountWallets;
+   array[100] of real AmountWallets,Powers;
    array[100] of string NameWallets,ArrayMessage;
-   integer count_wallets;
-   integer t,mode,i,j;
+   array[100] of string Register;
+   integer count_wallets,count_nodes,count_tran_block;
+   integer t,mode,i,j,start_send,net_reward,p,count_p;
+   integer for_hash,nonce,zero_count,time_stamp,num;
+   integer count_blocks;
+   real own_wallet,number,hash,prev_hash;
    boolean flag;
-   string s;
+   string s,block;
    schedule InitialEvent in 0;
  endi
  event;
@@ -39,12 +43,32 @@ routine BC_Node(InOut Con[10])
 	  s:="Wallet"+" "+"0";
 	  out s through Con[0];
      endif;	 
-   endif;
+   else
+     if ArrayMessage[0] = "Tran" then
+	 else
+	   if ArrayMessage[0] = "Tran_node" then
+	   else 
+	     if ArrayMessage[0] = "Block" then
+		 endif;
+	   endif;
+     endif;	 
+   endif;  
  ende 
  event InitialEvent;
    Print "InitialEvent";
+   start_send:=2;
    mode:=1;
+   count_blocks:=0;
    count_wallets:=4;
+   count_nodes:=3;
+   count_tran_block:=4;
+   net_reward:=1;
+   time_stamp:=0;
+   for_hash:=1;
+   p:=31;
+   count_p:=30;
+   zero_count:=1;
+   hash:=0;
    IdWallets[0]:=0;
    KeyWallets[0]:=1239876;
    AmountWallets[0]:=10000;
@@ -61,5 +85,47 @@ routine BC_Node(InOut Con[10])
    KeyWallets[3]:=3459876;
    AmountWallets[3]:=10000;
    NameWallets[3]:="Eve";
+   schedule FillPowers in 0;
+   schedule SendTransaction in start_send;
+ ende
+ event FillPowers;
+   i:=0;
+   number:=1;
+   while (i<5) do
+    Powers[i]:=number;
+    number:=number*p;
+    i:=i+1;	
+   endw;   
+   schedule FirstBlock in 0;
+   schedule FindHash in 0;
+ ende
+ event FindHash;
+   prev_hash:=hash;
+   num:=for_hash;
+   hash:=0;
+   i:=0;
+   while(num>0) do
+     hash:=hash+((num % 10)*Powers[i]);
+	 num:=(integer)num/10;
+	 i:=i+1;
+   endw;
+ ende
+ event FirstBlock;
+   block:="1";
+   block:=block+" "+IntToStr(time_stamp);
+   block:=block+" "+RealToStr(hash);
+   block:=block+" "+"0";
+   block:=block+" "+IntToStr(nonce);
+   schedule AddBlock in 0;
+ ende
+ event AddBlock;
+   Print block;
+   Register[count_blocks]:=block;
+   count_blocks:=count_blocks+1;
+ ende
+ event SendTransaction;
+   if mode = 1 then
+     
+   endif;
  ende
 endrout 

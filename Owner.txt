@@ -13,7 +13,6 @@ routine Owner(InOut Con[10])
    schedule InitialEvent in 0;
  endi
  event;
-   Print message;
    ArrayMessage:=Split(message,' ');
    if ArrayMessage[0] = "Wallet" then
 	   if ArrayMessage[1] != "0" then
@@ -35,7 +34,6 @@ routine Owner(InOut Con[10])
    endif;
  ende
  event InitialEvent;
-   Print "InitialEvent";
    t:=1;
    count_names:=4;
    Names[0]:="Tom";
@@ -52,15 +50,16 @@ routine Owner(InOut Con[10])
    limit:=5;
    max_reward:=5;
    min_reward:=1;
-   min_amount:=5;
-   max_amount:=10;
-   min_time:=1;
-   max_time:=3;
+   min_amount:=1;
+   max_amount:=5;
+   min_time:=3;
+   max_time:=5;
    id_name:=-1;
    counterr:=2;
    schedule SendKey in t;  
  ende
  event SendKey;
+   Print "Send Key";
    s:="";
    s:="Key"+" "+IntToStr(key);
    out s through Con[0];

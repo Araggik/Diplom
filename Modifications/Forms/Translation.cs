@@ -191,12 +191,6 @@ namespace TriadNSim.Modifications.Forms
 
         private void Translate()
         {
-            //main_panel.ShapeCollection.AddShape((NetworkObject)list_rules[0].leftPart[0]);
-            //main_panel.ShapeCollection.AddShape((NetworkObject)list_rules[0].leftPart[1]);
-            //Line newline = new Line(main_panel, new CConnectionPoint(main_panel, (NetworkObject)list_rules[0].leftPart[0]), new CConnectionPoint(main_panel, (NetworkObject)list_rules[0].leftPart[1]));
-            //main_panel.ShapeCollection.AddShape(newline);
-
-
             foreach(var rule in list_rules)
             {
                 int n = rule.leftPart.Count;
@@ -237,11 +231,12 @@ namespace TriadNSim.Modifications.Forms
                                             {
                                                 if(rule.input == null)
                                                 {
-                                                    line.FromCP.Owner = (NetworkObject)drawingPanel1.Shapes[first_new_index];
+                                                    NetworkObject nobj = (NetworkObject)drawingPanel1.Shapes[first_new_index];
+                                                    line.FromCP =  nobj.ConnectionPoint;
                                                 }
                                                 else
                                                 {
-                                                    line.FromCP.Owner = rule.input;
+                                                    line.FromCP = rule.input.ConnectionPoint;
                                                 }
                                                 del_indices_line.Add(line);
                                             }
@@ -249,11 +244,12 @@ namespace TriadNSim.Modifications.Forms
                                             {
                                                 if (rule.input == null)
                                                 {
-                                                    line.ToCP.Owner = (NetworkObject)drawingPanel1.Shapes[first_new_index];
+                                                    NetworkObject nobj = (NetworkObject)drawingPanel1.Shapes[first_new_index];
+                                                    line.ToCP = nobj.ConnectionPoint;
                                                 }
                                                 else
                                                 {
-                                                    line.ToCP.Owner = rule.input;
+                                                    line.ToCP.Owner = rule.input.ConnectionPoint;
                                                 }
                                                 del_indices_line.Add(line);
                                             }
@@ -262,7 +258,8 @@ namespace TriadNSim.Modifications.Forms
                                     foreach(var li in del_indices_line)
                                     {
                                         var line = (Line)li;
-                                        var newli = new Link(main_panel, new CConnectionPoint(main_panel, line.FromCP.Owner), new CConnectionPoint(main_panel, line.ToCP.Owner));
+                                        var newli = new Link(main_panel, line.FromCP,  line.ToCP);
+                                        newli.bSelected = false;
                                         drawingPanel1.Shapes.Add(newli);
                                         drawingPanel1.Shapes.Remove(li);
                                     }
@@ -282,9 +279,53 @@ namespace TriadNSim.Modifications.Forms
             }
             foreach(var el in drawingPanel1.Shapes)
             {
-                var obj = (BaseObject)el;
+                BaseObject obj = (BaseObject)el;
+                obj.drawingPanel = main_panel;
                 main_panel.ShapeCollection.AddShape(obj);
             }
+            //foreach(var el in drawingPanel1.Shapes)
+            //{
+            //    if (el is NetworkObject)
+            //    {
+            //        NetworkObject obj = (NetworkObject)el;
+            //        main_panel.ShapeCollection.AddShape(obj);
+            //    }
+            //}
+            //foreach (var el in drawingPanel1.Shapes)
+            //{
+            //    if (el is Link)
+            //    {
+            //        Link replace_line = (Link)el;
+            //        NetworkObject find_from = null;
+            //        NetworkObject find_to = null;
+            //        bool flag = false;
+            //        int i = 0;
+            //        while(!flag && i < main_panel.ShapeCollection.ShapeList.Count)
+            //        {                        
+            //            var current_obj = main_panel.ShapeCollection.ShapeList[i];
+            //            if(current_obj is NetworkObject)
+            //            {
+            //                NetworkObject cur_network_obj = (NetworkObject)current_obj;
+            //                if(replace_line.FromCP.Owner.Name == cur_network_obj.Name)
+            //                {
+            //                    find_from = cur_network_obj;
+            //                }
+            //                else if (replace_line.ToCP.Owner.Name == cur_network_obj.Name)
+            //                {
+            //                    find_to = cur_network_obj;
+            //                }
+            //            }
+            //            flag = (find_from != null) && (find_to != null);
+            //            i++;
+            //        }
+            //        if(flag)
+            //        {
+            //           Link newlink = new Link(main_panel, new CConnectionPoint(main_panel, find_from), new CConnectionPoint(main_panel, find_to));
+            //            newlink.bSelected = false;
+            //            main_panel.ShapeCollection.AddShape(newlink);
+            //        }
+            //    }
+            //}
             this.Close();
         }
 

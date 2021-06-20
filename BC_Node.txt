@@ -1,6 +1,8 @@
 routine BC_Node(InOut Con[10])
  initial
    Print "I'm node";   
+   real count_transactions;
+   count_transactions:=0;
    array[100] of integer IdWallets,KeyWallets;
    array[100] of real AmountWallets,Powers;
    array[100] of string NameWallets,ArrayMessage,ArrayTran;
@@ -14,6 +16,7 @@ routine BC_Node(InOut Con[10])
    integer minnonce,maxnonce, count_steps, count_accept;
    integer cur_leaf, count_leafs, last_leaf,cur_accept;
    integer create_id_bk,check_id_bk;
+   integer count_valid_tran;
    real own_wallet,number,hash,prev_hash,amount,reward;
    real hash_limit,bk_hash;
    boolean flag, flag2, fg_block, fg_tree,fg_nonce;
@@ -21,6 +24,9 @@ routine BC_Node(InOut Con[10])
    string s,block,tran,for_hash,sch,check_block,response;
    string recieve_tran;
    array[100] of char num;
+   own_wallet:=0; 
+   count_blocks:=0;
+   count_valid_tran:=0;
    schedule InitialEvent in 0;
  endi
  event;
@@ -119,6 +125,8 @@ routine BC_Node(InOut Con[10])
    NameWallets[3]:="Eve";
    cur_accept:=0;
    fg_check:=true;
+   count_transactions:=0;
+   count_valid_tran:=0;
    schedule FillPowers in 0;
    schedule SendTransaction in start_send;
  ende
@@ -202,6 +210,7 @@ routine BC_Node(InOut Con[10])
    my_block:=false;
  ende
  event ValidTran;
+   count_transactions:=count_transactions+1;
    Print "Validate transaction from client";
    i:=0;
    flag:=true;
@@ -221,6 +230,7 @@ routine BC_Node(InOut Con[10])
     amount:=StrToReal(ArrayMessage[3]);
     reward:=StrToReal(ArrayMessage[4]);
     if( AmountWallets[current_wallet] >= (amount+reward)) then
+	  count_valid_tran:=count_valid_tran+1;
       tran:=IntToStr(count_blocks)+IntToStr(RandomIn(minrand,maxrand));
 	  Print "Send transaction #" + tran;
       tran:=tran+" "+IntToStr(current_wallet);
@@ -255,6 +265,7 @@ routine BC_Node(InOut Con[10])
   schedule AddTime in 1;
  ende
  event ValidTranNode;
+   count_transactions:=count_transactions+1;
    ArrayMessage:=Split(recieve_tran,' ');
    Print "Validate transaction #"+ArrayMessage[1];
    i:=0;
@@ -271,10 +282,11 @@ routine BC_Node(InOut Con[10])
 	 endif;
      i:=i+1;
    endw;
-   if(!flag & !flag2) then
+   if(!flag & !flag2) then    
     amount:=StrToReal(ArrayMessage[4]);
     reward:=StrToReal(ArrayMessage[5]);
     if( AmountWallets[current_wallet] >= (amount+reward)) then
+	  count_valid_tran:=count_valid_tran+1;
       tran:=ArrayMessage[1];
       tran:=tran+" "+ArrayMessage[2];
 	  tran:=tran+" "+ArrayMessage[3];

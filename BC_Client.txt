@@ -1,65 +1,72 @@
 routine BC_Client(InOut Con[10])
- initial
-  Print "I'm client";
-  array[100] of string ArrayMessage,Names;
-  real current_amount,tran_sum;
-  string current_name,tran;
-  integer count_names,i;
-  boolean flag;
- endi
- event;
-  ArrayMessage:=Split(message,' ');
-  if ArrayMessage[0] = "Key" then
-     Print "Receive key";
-     out message through Con[1];
-  else
-    if ArrayMessage[0] = "Wallet" then
-	   if ArrayMessage[1] != "0" then
-	      Print "Asset accessed";
-	      current_name:=ArrayMessage[1];
-		  current_amount:=StrToReal(ArrayMessage[2]);
-	   else 
-	     Print "Asset not accessed";
-	     current_name:="";
-		 current_amount:=0;		 
-	   endif;
-	   out message through Con[0];
-	else 
-	  if ArrayMessage[0] = "Names" then
-	    count_names:=StrToInt(ArrayMessage[1]);
-		i:=0;
-		while(i<count_names) do 
-		  Names[i]:=ArrayMessage[2+i];
-		  i:=i+1;
-		endw;
-	  else
-	    Print "Receive "+message;
-	    if ArrayMessage[0] = "Tran" then
-		  schedule ValidTran in 0;
+initial
+	Print "I'm client";
+	array[100] of string ArrayMessage,Names;
+	real current_amount,tran_sum,count_tran;
+	string current_name,tran;
+	integer count_names,i;
+	boolean flag;
+	count_tran:=0;
+endi
+event;
+	ArrayMessage:=Split(message,' ');
+	if ArrayMessage[0] = "Key" then
+		Print "Receive key";
+		out message through Con[1];
+	else
+		if ArrayMessage[0] = "Wallet" then
+			if ArrayMessage[1] != "0" then
+				Print "Asset accessed";
+				current_name:=ArrayMessage[1];
+				current_amount:=StrToReal(ArrayMessage[2]);
+			else 
+				Print "Asset not accessed";
+				current_name:="";
+				current_amount:=0;
+			endif;
+			out message through Con[0];
+		else
+			if ArrayMessage[0] = "Names" then
+				count_names:=StrToInt(ArrayMessage[1]);
+				i:=0;
+				while(i<count_names) do 
+					Names[i]:=ArrayMessage[2+i];
+					i:=i+1;
+				endw;
+			else
+				if ArrayMessage[0] = "Tran" then
+					schedule ValidTran in 0;
+				else
+					if ArrayMessage[0] = "Refresh" then
+						current_amount:=StrToReal(ArrayMessage[1]);
+						out message through Con[0];
+					endif;
+				endif;
+			endif;
 		endif;
-      endif;	  
 	endif;
-  endif;
- ende
- event ValidTran;
-  tran_sum:=StrToReal(ArrayMessage[2])+StrToReal(ArrayMessage[3]);
-  if (tran_sum<=current_amount) then
-    i:=0;
-	flag:=true;
-	while((i<count_names) & flag)do
-	  if(ArrayMessage[1] = Names[i]) then
-	    flag:=false;
-	  endif;
-	  i:=i+1;
-	endw;
-	if(!flag) then
-	  tran:="Tran";
-	  tran:=tran+" "+current_name;
-	  for i:=0 to 2 do
-	    tran:=tran+" "+ArrayMessage[1+i];
-	  endf;	
-      out tran through Con[1];  	  
+ende
+event ValidTran;
+    count_tran:=count_tran+1;
+	Print "Count client trans **** "+RealToStr(count_tran);
+	tran_sum:=StrToReal(ArrayMessage[2])+StrToReal(ArrayMessage[3]);
+	if (tran_sum<=current_amount) then
+		i:=0;
+		flag:=true;
+		while((i<count_names) & flag)do
+			if(ArrayMessage[1] = Names[i]) then
+				flag:=false;
+			endif;
+			i:=i+1;
+		endw;
+		if(!flag) then
+			tran:="Tran";
+			tran:=tran+" "+current_name;
+			for i:=0 to 2 do
+				tran:=tran+" "+ArrayMessage[1+i];
+			endf;
+			out tran through Con[1];
+		endif;
 	endif;
-  endif;
- ende 
+ende 
 endrout 

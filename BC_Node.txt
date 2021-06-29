@@ -1,35 +1,40 @@
 routine BC_Node(InOut Con[10])
  initial
    Print "I'm node";   
-   real count_transactions;
+   real count_transactions, count_res_trans, count_res_blocks;
    count_transactions:=0;
    array[100] of integer IdWallets,KeyWallets;
    array[100] of real AmountWallets,Powers;
-   array[100] of string NameWallets,ArrayMessage,ArrayTran;
-   array[100] of string Register,Transactions,ArrayBlock;
+   array[100] of string NameWallets,ArrayTran,Register2;
+   array[1000] of string ArrayMessage;
+   array[100] of string Register,Transactions,ArrayBlock,log;
+   array[100] of string pool_trans,pool_blocks, pool_cl_trans;
    array[100] of real MTree;
    integer count_wallets,count_nodes,count_tran_block;
-   integer t,mode,i,j,start_send,net_reward,p,count_p;
+   integer t,mode,i,j,z,v,start_send,net_reward,p,count_p;
    integer nonce,zero_count,time_stamp,size_hash,cur_steps;
    integer count_blocks, current_wallet, to_id,from_id;
    integer cur_count_tran, minrand,maxrand,cur_count_hashes;
    integer minnonce,maxnonce, count_steps, count_accept;
    integer cur_leaf, count_leafs, last_leaf,cur_accept;
-   integer create_id_bk,check_id_bk;
-   integer count_valid_tran;
+   integer create_id_bk,check_id_bk, oind;
+   integer count_valid_tran,last_log;
+   integer last_pool_tran, last_pool_block, last_pool_cl_tran;
    real own_wallet,number,hash,prev_hash,amount,reward;
    real hash_limit,bk_hash;
-   boolean flag, flag2, fg_block, fg_tree,fg_nonce;
-   boolean fg_zero, my_block, fg_check;
-   string s,block,tran,for_hash,sch,check_block,response;
-   string recieve_tran;
+   real ohash, oprev_hash, oroot;
+   boolean flag, flag2, fg_tree,not_accept;
+   boolean fg_zero, my_block,has_register,valid_register;
+   string s,block,tran,for_hash,sch,response,other_block;
    array[100] of char num;
    own_wallet:=0; 
    count_blocks:=0;
-   count_valid_tran:=0;
+   count_valid_tran:=0;   
+   last_log:=0;
    schedule InitialEvent in 0;
  endi
  event;
+   Print message;
    ArrayMessage:=Split(message,' ');
    if ArrayMessage[0] = "Key" then
      i:=0;
@@ -60,22 +65,126 @@ routine BC_Node(InOut Con[10])
      endif;	 
    else
      if ArrayMessage[0] = "Tran" then
+	   pool_cl_trans[last_pool_cl_tran]:=message;
+	   last_pool_cl_tran:=last_pool_cl_tran+1;
 	   schedule ValidTran in 0;
 	 else
 	   if ArrayMessage[0] = "Tran_node" then
-	     Print "Receive transaction #"+ArrayMessage[1]+" ["+ArrayMessage[2]+", "+ArrayMessage[3]+", "+ArrayMessage[4]+", "+ArrayMessage[5]+" ]";
-	     recieve_tran:=message;
+	     (*Print "Receive transaction #"+ArrayMessage[1]+" ["+ArrayMessage[2]+", "+ArrayMessage[3]+", "+ArrayMessage[4]+", "+ArrayMessage[5]+" ]";*)
+		 pool_trans[last_pool_tran]:=message;
+	     last_pool_tran:=last_pool_tran+1;
 	     schedule ValidTranNode in 0;
 	   else 
 	     if ArrayMessage[0] = "Block" then
-		    check_block:=message;
+		    pool_blocks[last_pool_block]:=message;
+			last_pool_block:=last_pool_block+1;
 		    schedule CheckBlock in 0;
 		 else
 		   if ArrayMessage[0] = "Response" then
 		       if StrToInt(ArrayMessage[1]) = nonce then
-			     response:=message;
-			     schedule AddAccept in 0;
-			   endif;   		        
+                  s:=ArrayMessage[2];
+                  if s = "t" then
+                    cur_accept:=cur_accept+1;
+                  endif;
+                  if((cur_accept=count_accept) & not_accept) then
+				    not_accept:=false;
+                    my_block:=true;
+                    schedule AddBlock in 0;
+                  endif;	 
+			   endif;  
+           else
+		     if ArrayMessage[0] = "Register" then
+			   (*j-count blocks in register*)
+			   j:=StrToInt(ArrayMessage[1]);
+               if (count_blocks<j) then
+			      Print "Check register";
+			      valid_register:=true;			      
+				  oprev_hash:=StrToReal(ArrayMessage[4+count_wallets]);
+				  Register2[0]:=Register[0];
+			      v:=0;
+				  while ((v<j-1)&valid_register) do
+				    Print "Check block "+IntToStr(v);
+				    oind:=2+count_wallets+6+(v*(count_tran_block*5+6));
+					(*hash*)
+					Print oind;
+					for_hash:=ArrayMessage[oind+5]+ArrayMessage[oind+3]+"!";
+					num:=StrToCharArray(for_hash);					
+                    hash:=0;
+                    i:=0;
+                    while((num[i] !='!') &(i<size_hash)) do
+                      s:=CharToStr(num[i]);	 
+                      hash:=hash+(StrToInt(s)*Powers[i]);
+	                  i:=i+1;
+                    endw;  
+					Print "Calc hash "+RealToStr(hash);
+					Print ArrayMessage[oind+2];
+					if (RealToStr(hash) != ArrayMessage[oind+2]) then
+					  valid_register:=false;
+					endif;
+					(*nonce*)
+					if (valid_register) then
+					  Print "Hash is valid";
+					  for_hash:=ArrayMessage[oind+4]+ArrayMessage[oind+5]+"!";
+					  num:=StrToCharArray(for_hash);
+                      hash:=0;
+                      i:=0;
+                      while((num[i] !='!') &(i<size_hash)) do
+                        s:=CharToStr(num[i]);	 
+                        hash:=hash+(StrToInt(s)*Powers[i]);
+	                    i:=i+1;
+                      endw;  
+				  	  s:=RealToStr(hash);
+                      num:=StrToCharArray(s);
+	                  i:=0;
+	                  while ((i<zero_count)&valid_register) do
+	                   if(num[i] !='1') then
+		                valid_register:=false;
+	                   endif;
+	                   i:=i+1;
+	                  endw;
+					  if valid_register then	
+                        Print "nonce is valid";					  
+				        other_block:=ArrayMessage[oind];
+				        other_block:=other_block+" "+ArrayMessage[oind+1];
+				        other_block:=other_block+" "+ArrayMessage[oind+2];
+				        other_block:=other_block+" "+ArrayMessage[oind+3];
+				        other_block:=other_block+" "+ArrayMessage[oind+4];
+				        other_block:=other_block+" "+ArrayMessage[oind+5];
+				        z:=0;
+				        while (z < count_tran_block) do
+					      other_block:=other_block+" "+ArrayMessage[z*5+oind+6];
+						  other_block:=other_block+" "+ArrayMessage[z*5+oind+7];
+						  other_block:=other_block+" "+ArrayMessage[z*5+oind+8];
+						  other_block:=other_block+" "+ArrayMessage[z*5+oind+9];
+						  other_block:=other_block+" "+ArrayMessage[z*5+oind+10];
+					      z:=z+1;
+					    endw;
+					  endif;
+					endif;
+					Print "Add block "+other_block;					
+				    v:=v+1;
+					Register2[v]:=other_block;
+				  endw;
+				  if (valid_register) then
+				    Print "Change register";
+				    count_blocks:=j;
+					count_res_blocks:=count_blocks;
+					count_res_trans:=count_tran_block*(count_blocks-1);
+					Register:=Register2;
+					i:=0;
+					while (i<count_wallets) do
+					  AmountWallets[i]:=StrToReal(ArrayMessage[1+i]);
+					  i:=i+1;
+					endw;
+				  endif;
+			   endif;
+			 else
+			   (*log[last_log]:=message;
+			   if last_log = 0 then 
+			     schedule Loge in 2;
+			   endif;
+               last_log:=last_log+1;*)	
+			 endif;            		 
 		   endif;
 		 endif;
 	   endif;
@@ -87,7 +196,6 @@ routine BC_Node(InOut Con[10])
    start_send:=2;
    mode:=1;
    own_wallet:=0;
-   fg_block:=false;
    cur_count_tran:=0;
    count_blocks:=0;
    count_wallets:=4;
@@ -124,9 +232,13 @@ routine BC_Node(InOut Con[10])
    AmountWallets[3]:=10000;
    NameWallets[3]:="Eve";
    cur_accept:=0;
-   fg_check:=true;
    count_transactions:=0;
    count_valid_tran:=0;
+   last_pool_block:=0;
+   last_pool_cl_tran:=0;
+   last_pool_tran:=0;
+   not_accept:=true;
+   current_wallet:=-1;
    schedule FillPowers in 0;
    schedule SendTransaction in start_send;
  ende
@@ -149,30 +261,9 @@ routine BC_Node(InOut Con[10])
      s:=CharToStr(num[i]);	 
      hash:=hash+(StrToInt(s)*Powers[i]);
 	 i:=i+1;
-   endw;
-   if (fg_block) then
-     cur_count_hashes:=cur_count_hashes+1;
-	 if(fg_tree) then
-	    cur_leaf:=cur_leaf+2;
-		count_leafs:=count_leafs-1;
-	 else
-        if(fg_nonce) then
-		  count_steps:=count_steps+1;
-        endif;		
-	 endif;
-	 schedule Mine in 0;
-   endif; 
-   (*
-   while(hash>hash_limit) do
-     hash:=hash/10;
-   endw;
-   hash:=(integer)(hash);*)
-   if (!fg_check) then
-     schedule CheckBlock in 0;
-   endif;
+   endw;  
  ende
  event FirstBlock;
-   fg_block:=true;
    prev_hash:=hash;
    block:="0";
    block:=block+" "+IntToStr(time_stamp);
@@ -203,14 +294,19 @@ routine BC_Node(InOut Con[10])
 	 endif;  
 	 prev_hash:=StrToReal(ArrayBlock[2]);
    endif;
-   cur_accept:=0;
    cur_count_tran:=0;   
    Register[count_blocks]:=block;
    count_blocks:=count_blocks+1;
    my_block:=false;
+   count_res_blocks:=count_blocks;
+   count_res_trans:=count_tran_block*(count_blocks-1);
  ende
- event ValidTran;
+ event ValidTran;   
+   last_pool_cl_tran:=last_pool_cl_tran-1;
+   Print "Tom wallet: "+RealToStr(AmountWallets[current_wallet]);
+   ArrayMessage:=Split(pool_cl_trans[last_pool_cl_tran],' ');
    count_transactions:=count_transactions+1;
+   Print "Count node trans ----- "+RealToStr(count_transactions);
    Print "Validate transaction from client";
    i:=0;
    flag:=true;
@@ -232,7 +328,7 @@ routine BC_Node(InOut Con[10])
     if( AmountWallets[current_wallet] >= (amount+reward)) then
 	  count_valid_tran:=count_valid_tran+1;
       tran:=IntToStr(count_blocks)+IntToStr(RandomIn(minrand,maxrand));
-	  Print "Send transaction #" + tran;
+	  (*Print "Send transaction #" + tran;*)
       tran:=tran+" "+IntToStr(current_wallet);
 	  tran:=tran+" "+IntToStr(to_id);
 	  tran:=tran+" "+ArrayMessage[3];
@@ -248,8 +344,6 @@ routine BC_Node(InOut Con[10])
 	  if cur_count_tran = count_tran_block then
 	    cur_count_hashes:=0;
 		fg_tree:=false;
-		fg_nonce:=false;
-		fg_block:=true;
 		Print "Start mine";
 	    schedule Mine in 1;
 	  endif;
@@ -260,13 +354,30 @@ routine BC_Node(InOut Con[10])
    if mode = 1 then     
    endif;
  ende
+ event Loge;
+  if last_log>0 then
+   i:=0;
+   Print "Log";
+   while(i<last_log) do
+     Print log[i];
+	 i:=i+1;
+   endw;
+   last_log:=0;
+  endif;
+ ende
  event AddTime;
+  if ((time_stamp % 4 = 0) & (mode =2)) then
+     s:="Refresh";
+	 s:=s+" "+RealToStr(AmountWallets[current_wallet]);
+	 out s through Con[0];
+  endif;
   time_stamp:=time_stamp+1;
   schedule AddTime in 1;
  ende
  event ValidTranNode;
+   last_pool_tran:=last_pool_tran-1;
+   ArrayMessage:=Split(pool_trans[last_pool_tran],' ');
    count_transactions:=count_transactions+1;
-   ArrayMessage:=Split(recieve_tran,' ');
    Print "Validate transaction #"+ArrayMessage[1];
    i:=0;
    flag:=true;
@@ -285,7 +396,7 @@ routine BC_Node(InOut Con[10])
    if(!flag & !flag2) then    
     amount:=StrToReal(ArrayMessage[4]);
     reward:=StrToReal(ArrayMessage[5]);
-    if( AmountWallets[current_wallet] >= (amount+reward)) then
+    if( AmountWallets[from_id] >= (amount+reward)) then
 	  count_valid_tran:=count_valid_tran+1;
       tran:=ArrayMessage[1];
       tran:=tran+" "+ArrayMessage[2];
@@ -297,8 +408,6 @@ routine BC_Node(InOut Con[10])
 	  if cur_count_tran = count_tran_block then
 	    cur_count_hashes:=0;
 		fg_tree:=false;
-		fg_nonce:=false;
-		fg_block:=true;
 		Print "Start mine";
 	    schedule Mine in 1;
 	  endif;
@@ -314,6 +423,8 @@ routine BC_Node(InOut Con[10])
 	 s:="";
 	 s:=s+ArrayTran[0]+ArrayTran[1]+ArrayTran[2]+ArrayTran[3]+ArrayTran[4];
 	 for_hash:=s+"!";
+	 cur_count_hashes:=cur_count_hashes+1;
+	 schedule Mine in 0;
      schedule FindHash in 0;
    else
     if (cur_count_hashes = count_tran_block) then
@@ -322,31 +433,33 @@ routine BC_Node(InOut Con[10])
 	  cur_leaf:=0;
 	  last_leaf:=cur_count_hashes-1;
 	  count_leafs:=count_tran_block;
-	  for_hash:=RealToStr(MTree[cur_leaf]+MTree[cur_leaf+1])+"!";
+	  for_hash:=RealToStr(MTree[cur_leaf]+MTree[cur_leaf+1])+"!";	  
+	  cur_count_hashes:=cur_count_hashes+1;
+	  schedule Mine in 0;
 	  schedule FindHash in 0;
 	else
-	  if(last_leaf!=1) then  
-	    MTree[(integer)((cur_leaf-2)/2)]:=hash;
-	    if cur_leaf > last_leaf then
-	      cur_leaf:=0;
-		  last_leaf:=count_leafs-1;		
-	    else
+	  if(last_leaf!=0) then    	    	
+	    if cur_leaf >= last_leaf then
 		  if cur_leaf = last_leaf then
-		    cur_leaf:=0;
 		    MTree[cur_leaf]:=MTree[last_leaf];
-		    last_leaf:=count_leafs-1;
 		  endif;
-	    endif;
+		  cur_leaf:=0;
+		  last_leaf:=count_leafs-1;			  
+        else
+		  MTree[(integer)((cur_leaf)/2)]:=hash;	
+          cur_leaf:=cur_leaf+2;
+          count_leafs:=count_leafs-1;	       	  
+	    endif;	        	
 	    for_hash:=RealToStr(MTree[cur_leaf])+RealToStr(MTree[cur_leaf+1])+"!";
+		schedule Mine in 0;
 	    schedule FindHash in 0;
 	  else
 		if(fg_tree) then
-	      MTree[(integer)((cur_leaf-2)/2)]:=hash;
 		  nonce:=RandomIn(minnonce,maxnonce);
-		  count_steps:=0;
-		  for_hash:=IntToStr(nonce)+RealToStr(hash)+"!";	  
+		  count_steps:=1;
+		  for_hash:=IntToStr(nonce)+RealToStr(MTree[0])+"!";	  
 		  fg_tree:=false;
-	      fg_nonce:=true; 
+		  schedule Mine in 0;
 		  schedule FindHash in 0;
 		else
 		  s:=RealToStr(hash);
@@ -361,13 +474,14 @@ routine BC_Node(InOut Con[10])
 		  endw;
 		  if(fg_zero) then
 		   Print "Find nonce " + IntToStr(nonce);
-		   fg_block:=false;
 		   for_hash:=RealToStr(MTree[0])+RealToStr(prev_hash)+"!";
 		   schedule CreateBlock in 0;
 		   schedule FindHash in 0;
 		  else
 		   nonce:=nonce+1;
+		   count_steps:=count_steps+1;
 		   for_hash:=IntToStr(nonce)+RealToStr(MTree[0])+"!";	
+		   schedule Mine in 0;
 		   schedule FindHash in 0;
 		  endif;
 		endif;  	          
@@ -400,15 +514,21 @@ routine BC_Node(InOut Con[10])
       out s through Con[i];
       i:=i+1;
    endw;
+   schedule SendRegister in 1;
  ende
- event CheckBlock;   
-   ArrayBlock:=Split(check_block,' ');
-   if(fg_check) then
-     fg_check:=false;	 
+ event CheckBlock;  
+     Print "Check block"; 
+     last_pool_block:=last_pool_block-1;
+     ArrayBlock:=Split(pool_blocks[last_pool_block],' '); 
      for_hash:=ArrayBlock[6]+ArrayBlock[7]+"!";	 
-	 schedule FindHash in 0;
-   else
-     Print "Check recieve block";
+     num:=StrToCharArray(for_hash);
+     hash:=0;
+     i:=0;
+     while((num[i] !='!') &(i<size_hash)) do
+       s:=CharToStr(num[i]);	 
+       hash:=hash+(StrToInt(s)*Powers[i]);
+	   i:=i+1;
+     endw;      
      s:=RealToStr(hash);
      num:=StrToCharArray(s);
 	 i:=0;
@@ -422,9 +542,9 @@ routine BC_Node(InOut Con[10])
 	 cur_steps:=StrToInt(ArrayBlock[1]);
 	 check_id_bk:=StrToInt(ArrayBlock[2]);
 	 sch:="f";
-	 if(fg_zero & ((check_id_bk = create_id_bk) & (cur_steps<count_steps))) then
+	 if(fg_zero & (((check_id_bk = create_id_bk) & (cur_steps<count_steps)) | (check_id_bk>create_id_bk))) then
         sch:="t";
-		block:=ArrayBlock[2];
+		(*block:=ArrayBlock[2];
 		i:=3;
 		while (i<=7) do
 		  block:=block+" "+ArrayBlock[i];
@@ -439,8 +559,7 @@ routine BC_Node(InOut Con[10])
 		  block:=block+" "+ArrayBlock[i*5+12];
 		  i:=i+1;
 		endw;
-		Print block;
-		schedule AddBlock in 0;
+		schedule AddBlock in 0;*)
 	 endif;
 	 i:=1;
 	 while (i<=count_nodes) do
@@ -448,18 +567,37 @@ routine BC_Node(InOut Con[10])
 		 out s through Con[i];
 	     i:=i+1;
 	 endw;
-	 fg_check:=true;
-   endif;  
  ende
- event AddAccept;
-   ArrayMessage:=Split(response,' ');
-   s:=ArrayMessage[2];
-   if s = "t" then
-     cur_accept:=cur_accept+1;
-   endif;
-   if cur_accept>=count_accept then
-     my_block:=true;
-     schedule AddBlock in 0;
-   endif;	 
+ event SendRegister;
+    cur_accept:=0;
+	not_accept:=true;
+	s:="Register"+" "+IntToStr(count_blocks);
+	Print "Size "+s;
+	i:=0;
+	while (i<count_wallets) do
+	  s:=s+" "+RealToStr(AmountWallets[i]);
+	  i:=i+1;
+	endw;
+	i:=0;
+	while (i<count_blocks) do
+	  s:=s+" "+Register[i];
+	  i:=i+1;
+	endw;
+	i:=1;
+	while (i<=count_blocks) do
+	  out s through Con[i];
+	  i:=i+1;
+	endw;
+	(*
+    i:=1;	
+	while (i<=count_nodes)do
+	  j:=0;  
+	  out "Register" through Con[i];
+	  while (j<count_blocks) do	     
+	    out Register[j] through Con[i];
+		j:=j+1;
+	  endw;	  
+	  i:=i+1;
+	endw; *)
  ende
 endrout 

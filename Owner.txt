@@ -31,6 +31,10 @@ routine Owner(InOut Con[10])
 	     name:="";
 		 wallet:=0;		 
 	   endif;
+   else
+     if ArrayMessage[0] = "Refresh" then
+		wallet:=StrToReal(ArrayMessage[1]);
+	 endif;   
    endif;
  ende
  event InitialEvent;
@@ -47,13 +51,13 @@ routine Owner(InOut Con[10])
    wallet:=0;
    minerr:=0;
    maxerr:=1000;
-   limit:=5;
+   limit:=500;
    max_reward:=5;
    min_reward:=1;
    min_amount:=1;
    max_amount:=5;
-   min_time:=3;
-   max_time:=5;
+   min_time:=5;
+   max_time:=10;
    id_name:=-1;
    counterr:=2;
    schedule SendKey in t;  
